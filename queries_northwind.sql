@@ -142,3 +142,35 @@ SELECT * FROM Categories
 EXEC sp_delete_category 9
 
 SELECT * FROM Categories
+
+
+-- Crear un procedimiento almacenado que calcule la cantidad de clientes de un
+-- país determinado
+
+CREATE PROCEDURE sp_customers_by_country @Country NVARCHAR(15)
+AS
+BEGIN
+    SELECT COUNT(CustomerID)
+    FROM Customers
+    WHERE Country = @Country
+END;
+GO;
+
+EXECUTE sp_customers_by_country 'USA'
+
+-- Crear un procedimiento almacenado que retorne la cantidad de clientes de un
+-- país determinado
+
+CREATE PROCEDURE sp_totalCustomers_by_country @Country NVARCHAR(15),
+                                         @Quantity INT OUTPUT
+AS
+BEGIN
+    SELECT @Quantity = COUNT(CustomerID)
+    FROM Customers
+    WHERE Country = @Country
+END;
+GO;
+
+DECLARE @Total INT
+EXEC sp_totalCustomers_by_country 'USA', @Total OUTPUT
+PRINT @Total
