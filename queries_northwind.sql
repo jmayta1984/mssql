@@ -126,3 +126,19 @@ BEGIN
     INSERT INTO Categories (CategoryName) VALUES(@CategoryName)
 END;
 
+-- Crear un procedimiento almacenado que permita borrar un categoría indicando id
+
+CREATE PROCEDURE sp_delete_category @CategoryID INT
+AS
+BEGIN
+   DELETE FROM Categories WHERE CategoryID = @CategoryID
+END;
+GO;
+
+EXECUTE sp_insert_category 'Sneakers'
+
+SELECT * FROM Categories
+
+EXEC sp_delete_category 9
+
+SELECT * FROM Categories
