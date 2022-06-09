@@ -95,7 +95,7 @@ GO;
 
 -- Crear un procedimiento almacenado para imprimir el nombre y la cantidad en stock de cada producto
 
-ALTER PROCEDURE sp_products
+CREATE PROCEDURE sp_products
 AS
 BEGIN
     DECLARE @ProductName NVARCHAR(40), @UnitInStock SMALLINT
@@ -116,4 +116,13 @@ END;
 
 EXEC sp_products
 
+-- Crear un procedimiento almacenado que permita ingresar un nueva categoría indicando
+-- el nombre de la categoría
+
+CREATE PROCEDURE sp_insert_category
+    @CategoryName NVARCHAR(15)
+AS
+BEGIN
+    INSERT INTO Categories (CategoryName) VALUES(@CategoryName)
+END;
 
