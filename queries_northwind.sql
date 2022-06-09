@@ -1,5 +1,12 @@
 use NORTHWND1;
 
+-- CREATE PROCURE <sp_name>
+-- @param <data_type>
+-- AS
+-- BEGIN
+--      Query
+-- END
+
 SELECT DISTINCT City FROM Customers;
 -- Equivalente en MongoDB: db.customers.distinct("City");
 
@@ -21,8 +28,6 @@ EXECUTE sp_company_by_city 'London';
 -- la compañía
 
 SELECT DISTINCT CompanyName FROM Customers;
-
-
 
 CREATE PROCEDURE sp_orders_by_companyName
     @companyName VARCHAR(50)
@@ -52,3 +57,63 @@ BEGIN
 END;
 
 EXECUTE sp_products_by_categoryName 'Seafood';
+
+-- Crear un procedimiento almacenado que permita listar lo nombres de los proveedores de acuerdo a un
+-- determinado país
+CREATE PROCEDURE sp_supplier_by_country @Country NVARCHAR(15)
+AS
+BEGIN
+    SELECT CompanyName FROM Suppliers WHERE Country = @Country
+END;
+
+GO;
+
+EXECUTE sp_supplier_by_country 'FRANCE';
+
+-- Crear un procedimiento almacenado que permita mostrar la cantidad de pedidos atendidos de acuerdo a un
+-- determiano embarcador
+
+ALTER PROCEDURE sp_orders_by_shipper @CompanyName NVARCHAR(40),
+                                     @Quantity INT OUTPUT
+AS
+BEGIN
+    SELECT @Quantity = COUNT(OrderID)
+    FROM Orders O
+             JOIN Shippers S on S.ShipperID = O.ShipVia
+    WHERE CompanyName = @CompanyName
+END;
+GO;
+
+SELECT DISTINCT CompanyName
+FROM Shippers;
+
+DECLARE @Total INT
+EXEC sp_orders_by_shipper 'Federal Shipping', @Total OUTPUT;
+PRINT @Total;
+
+GO;
+
+-- Crear un procedimiento almacenado para imprimir el nombre y la cantidad en stock de cada producto
+
+ALTER PROCEDURE sp_products
+AS
+BEGIN
+    DECLARE @ProductName NVARCHAR(40), @UnitInStock SMALLINT
+
+    DECLARE cursor_products CURSOR FOR SELECT ProductName, UnitsInStock FROM Products
+
+    OPEN cursor_products;
+    FETCH NEXT FROM cursor_products INTO @ProductName, @UnitInStock
+
+    WHILE @@FETCH_STATUS = 0
+        BEGIN
+            PRINT 'Product: ' +@ProductName + ' - Stock: ' + LTRIM(STR(@UnitInStock))
+            FETCH NEXT FROM cursor_products INTO @ProductName, @UnitInStock
+        END
+    CLOSE cursor_products
+    DEALLOCATE cursor_products
+END;
+
+EXEC sp_products
+
+
