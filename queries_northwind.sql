@@ -174,3 +174,40 @@ GO;
 DECLARE @Total INT
 EXEC sp_totalCustomers_by_country 'USA', @Total OUTPUT
 PRINT @Total
+
+-- Crear un procedimiento almacenado que permita imprimir el inventario por cada producto
+-- e imprimir el inventario en total
+
+CREATE PROCEDURE sp_stock_per_product
+AS
+BEGIN
+
+    DECLARE @ProductName NVARCHAR(40), @UnitsInStock SMALLINT, @Total INT = 0
+
+    -- Declarar el cursor
+    DECLARE products_cursor CURSOR FOR SELECT ProductName, UnitsInStock
+                                       FROM Products
+
+    -- Abrir el cursor
+    OPEN products_cursor
+
+    -- Moverme al siguiente registro
+    FETCH products_cursor INTO @ProductName, @UnitsInStock
+
+    -- Validar si la operación fetch fue exitosa
+    WHILE @@FETCH_STATUS = 0
+        BEGIN
+            PRINT @ProductName + ' stock: ' + LTRIM(STR(@UnitsInStock))
+            SET @Total += @UnitsInStock
+            FETCH products_cursor INTO @ProductName, @UnitsInStock
+        END
+    PRINT 'Inventary total: '+ LTRIM(STR(@Total))
+    -- Cerrar el cursor
+    CLOSE products_cursor
+
+    -- Liberar
+    DEALLOCATE products_cursor
+END;
+GO;
+
+EXEC sp_stock_per_product;
