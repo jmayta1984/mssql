@@ -211,3 +211,12 @@ END;
 GO;
 
 EXEC sp_stock_per_product;
+
+-- Crear una función que retorne una tabla que contenga el nombre y el país del cliente
+CREATE FUNCTION f_customers() RETURNS TABLE
+AS
+    RETURN SELECT CompanyName, Country FROM Customers;
+
+SELECT CompanyName FROM dbo.f_customers() WHERE Country = 'France';
+
+-- Crear una función que retorne el nombre del producto con mayor cantidad de órdenes en un determinado año
