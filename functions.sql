@@ -220,3 +220,137 @@ begin
 end;
 
 execute sp_products_by_supplier 'Leka Trading'
+
+/*  Ejercicio 10:
+    Crear una función o procedimiento almacenado que retorne el proveedor con la mayor cantidad de productos
+    comercializados de acuerdo a un determinado país de origen.
+ */
+
+create function f_products_by_supplier_per_country(@Country nvarchar(15))
+    returns table
+        as
+        return
+            (
+                select CompanyName, count(ProductId) as Quantity
+                from Suppliers s
+                         join Products P on s.SupplierID = P.SupplierID
+                where Country = @Country
+                group by CompanyName
+            )
+go;
+
+create function f_best_supplier_per_country(@Country nvarchar(15))
+    returns table
+        as
+        return
+            (
+                select CompanyName
+                from dbo.f_products_by_supplier_per_country(@Country)
+                where Quantity = (
+                    select max(Quantity)
+                    from dbo.f_products_by_supplier_per_country(@Country)
+                )
+            )
+
+select *
+from dbo.f_best_supplier_per_country('France');
+
+
+/*  Ejercicio 11:
+
+    Crear un procedimiento almacenado o una función que retorne la categoría de producto con la mayor de
+    ordenes realizadas de acuerdo al país de destino.
+ */
+
+create function f_orders_by_category_per_country(@Country nvarchar(15))
+    returns table
+        as
+        return
+            (
+                select CategoryName, count(O.OrderID) as Quantity
+                from Orders O
+                         join [Order Details] [O D] on O.OrderID = [O D].OrderID
+                         join Products P on [O D].ProductID = P.ProductID
+                         join Categories C on P.CategoryID = C.CategoryID
+                where ShipCountry = @Country
+                group by CategoryName
+            )
+
+create function f_best_category_per_country(@Country nvarchar(15)) returns nvarchar(15)
+as
+begin
+    declare @CategoryName nvarchar(15)
+
+    select @CategoryName = CategoryName
+    from dbo.f_orders_by_category_per_country(@Country)
+    where Quantity = (select max(quantity) from dbo.f_orders_by_category_per_country(@Country))
+
+    return @CategoryName
+end
+
+print dbo.f_best_category_per_country('France')
+
+
+/*  Ejercicio 12:
+    Crear un procedimiento almacenado que muestre la categoría en la que se tuvo el mayor monto de venta
+    acumulado.
+ */
+
+create function f_sales_by_category()
+    returns table
+        as return
+            (
+                select CategoryName, sum(OD.unitprice * quantity - discount) as Total
+                from Categories C
+                         join Products P on C.CategoryID = P.CategoryID
+                         join [Order Details] OD on P.ProductID = OD.ProductID
+                group by CategoryName
+            )
+
+create function f_best_category() returns nvarchar(15)
+as
+begin
+    declare @CategoryName nvarchar(15)
+
+    select @CategoryName = CategoryName
+    from dbo.f_sales_by_category()
+    where total = (select max(Total) from dbo.f_sales_by_category())
+
+    return @CategoryName
+end;
+go;
+
+print dbo.f_best_category()
+
+/* Ejercicio 13:
+   Mostrar en un procedimiento almacenado, el país donde se ha vendido más órdenes durante un año ingresado
+   como parámetro.
+ */
+
+create function f_orders_by_country_per_year(@Year int)
+    returns table
+        as return
+            (
+                select ShipCountry, count(OrderID) as Total
+                from orders
+                where year(OrderDate) = @Year
+                group by ShipCountry
+            )
+
+create function f_best_country_per_year(@Year int) returns nvarchar(15)
+as
+begin
+    declare @ShipCountry nvarchar(15)
+
+    select @ShipCountry = ShipCountry
+    from dbo.f_orders_by_country_per_year(@Year)
+    where Total = (select max(Total) from dbo.f_orders_by_country_per_year(@Year))
+    return @ShipCountry
+end
+
+print dbo.f_best_country_per_year (2017)
+
+/*  Ejercicio 14:
+    Mostrar en un procedimiento almacenado el proveedor que tuve la menor cantidad de productos vendidos
+    en un año ingresado como parámetro.
+ */
