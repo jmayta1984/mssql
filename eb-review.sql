@@ -450,3 +450,105 @@ end
     para un determinado país y un determinado año, los cuales son
     ingresados como parámetros.
 */
+
+/*  Ejercicio 19:
+    Crear un procedimiento almacenado o función que retorne la cantidad de
+    empleados de acuerdo a un determinado país, el cual es ingresado como parámetro.
+ */
+
+create function f_employees_per_country(@Country nvarchar(15)) returns int
+as
+begin
+    declare @Quantity int
+
+    select @Quantity = count(EmployeeID)
+    from Employees
+    where Country = @Country
+
+    return @Quantity
+end;
+go;
+
+print dbo.f_employees_per_country('USA');
+
+
+/*  Ejercicio 20:
+    Crear un procedimiento almacenado o función que permita mostrar la cantidad
+    de órdenes realizadas por país de destino de acuerdo a un determinado año,
+    el cual es ingresado como parámetro.
+ */
+
+create function f_orders_by_country_per_year(@Year int)
+    returns table
+        as
+        return
+        select ShipCountry, count(OrderId) as Quantity
+        from Orders
+        where year(OrderDate) = @Year
+        group by ShipCountry;
+
+select *
+from dbo.f_orders_by_country_per_year(1997);
+
+
+/*  Ejercicio 21:
+    Crear un procedimiento almacenado o función que retorne el cliente con la mayor cantidad de órdenes realizadas
+    de acuerdo a un determiando país de destino, el cual es ingresado como parámetro.
+ */
+
+create function f_orders_by_company_per_country(@Country nvarchar(15))
+    returns table
+        as
+        return
+        select CompanyName, count(OrderId) as Quantity
+        from Customers C
+                 join Orders O on C.CustomerID = O.CustomerID
+        where ShipCountry = @Country
+        group by CompanyName;
+
+select *
+from dbo.f_orders_by_company_per_country('Argentina')
+
+create function f_best_company_per_country(@Country nvarchar(15)) returns nvarchar(40)
+as
+begin
+    declare @CompanyName nvarchar(40)
+
+    select @CompanyName = CompanyName
+    from dbo.f_orders_by_company_per_country(@Country)
+    where Quantity = (select max(Quantity) from dbo.f_orders_by_company_per_country(@Country))
+
+    return @CompanyName
+end;
+go;
+
+print dbo.f_best_company_per_country('Argentina');
+go;
+
+/*  Ejercicio: 22
+    Crear un procedimiento almacenado o función que retorne el nombre del embarcador con mayor cantidad
+    de pedidos atentidos para un determinado país de destino, el cual es ingresado como parámetro.
+
+ */
+
+create function f_orders_by_shipper_per_country(@Country nvarchar(15))
+    returns table
+        as
+        return
+        select CompanyName, count(OrderId) as Quantity
+        from Shippers S
+                 join Orders O on S.ShipperID = O.ShipVia
+        where ShipCountry = @Country
+        group by CompanyName;
+
+create function f_best_shipper_per_country(@Country nvarchar(15)) returns nvarchar(40)
+as
+begin
+    declare @CompanyName nvarchar(40)
+
+    select @CompanyName = CompanyName
+    from dbo.f_orders_by_shipper_per_country(@Country)
+    where Quantity = (select max(Quantity) from dbo.f_orders_by_shipper_per_country(@Country))
+
+    return @CompanyName
+end;
