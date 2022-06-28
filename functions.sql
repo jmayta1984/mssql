@@ -359,3 +359,91 @@ print dbo.f_best_country_per_year (2017)
     Mostrar en un procedimiento almacenado el proveedor que tuve la menor cantidad de productos vendidos
     en un año ingresado como parámetro.
  */
+
+/*  Ejercicio 15:
+    Crear una función o procedimiento almacenado que retorne la
+    cantidad de órdenes para un determinado año, el cual es
+    ingresado como parámetro.
+*/
+create function f_orders_per_year(@Year int) returns int
+as
+begin
+    declare @Quantity int
+
+    select @Quantity = count(OrderID)
+    from Orders
+    where year(OrderDate) = @Year
+
+    return @Quantity
+end;
+go;
+
+/*  Ejercicio 16:
+    Crear una función o procedimiento almacenado que retorne la
+    categoría con la menor cantidad de órdenes realizadas durante
+    un determinado año, el cual es ingresado como parámetro.
+*/
+
+select min(Quantity)
+from (select CategoryName, count(O.OrderID) as Quantity
+      from Categories C
+               join Products P on C.CategoryID = P.CategoryID
+               join [Order Details] [O D] on P.ProductID = [O D].ProductID
+               join Orders O on [O D].OrderID = O.OrderID
+      where year(orderDate) = 2017
+      group by CategoryName) as Result;
+/*
+CategoryName    Quantity
+Beverages       100
+Condiments      50
+Clothes         20
+*/
+--select CategoryName from Result where Quantity = 20
+
+
+create function f_orders_by_category_per_year(@Year int)
+    returns table
+        as
+        return
+        select CategoryName, count(O.OrderID) as Quantity
+        from Categories C
+                 join Products P on C.CategoryID = P.CategoryID
+                 join [Order Details] [O D] on P.ProductID = [O D].ProductID
+                 join Orders O on [O D].OrderID = O.OrderID
+        where year(orderDate) = @Year
+        group by CategoryName
+
+create function f_bestCategory_per_year(@Year int) returns nvarchar(15)
+as
+begin
+    declare @CategoryName nvarchar(15)
+
+    select @CategoryName = CategoryName
+    from dbo.f_orders_by_category_per_year(@Year)
+    where Quantity = (select min(Quantity) from dbo.f_orders_by_category_per_year(@Year))
+
+    return @CategoryName
+end;
+
+/*  Ejercicio 17:
+    Crear una función o procedimiento almacenado que retorne la
+    cantidad de órdenes atendidas por cada embarcador (shipper)
+    durante un determinado año, el cual es ingresado como parámetro.
+*/
+
+create procedure sp_orders_by_shipper_per_year @Year int
+as
+begin
+    select CompanyName, count(OrderId)
+    from Shippers S
+             join Orders O on S.ShipperID = O.ShipVia
+    where year(OrderDate) = @Year
+    group by CompanyName
+end
+
+/*  Ejercicio 18:
+    Crear una función o procedimiento almacenado que retorne el
+    nombre de la compañía con mayor cantidad de órdenes solicitadas
+    para un determinado país y un determinado año, los cuales son
+    ingresados como parámetros.
+*/
