@@ -1,6 +1,9 @@
 /*
    Script de base de datos:
    https://github.com/microsoft/sql-server-samples/blob/master/samples/databases/northwind-pubs/instnwnd%20(Azure%20SQL%20Database).sql
+   Previamente debe crear la base de datos con los siguientes comandos:
+   create database northwind
+   use nortwind
 */
 
 use Northwind;
