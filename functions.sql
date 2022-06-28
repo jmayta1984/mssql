@@ -1,3 +1,8 @@
+/*
+   Script de base de datos:
+   https;//github.com/microsoft/sql-server-samples/blob/master/samples/databases/northwind-pubs/instnwnd%20(Azure%20SQL%20Database).sql
+*/
+
 use Northwind;
 
 /* Ejercicio 1
