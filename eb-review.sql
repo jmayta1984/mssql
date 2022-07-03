@@ -359,9 +359,66 @@ end
 print dbo.f_best_country_per_year (2017)
 
 /*  Ejercicio 14:
-    Mostrar en un procedimiento almacenado el proveedor que tuve la menor cantidad de productos vendidos
-    en un año ingresado como parámetro.
+    Mostrar en un procedimiento almacenado o función el proveedor que tuvo la menor cantidad de cantidad de productos
+    vendidos en un año ingresado como parámetro.
  */
+
+-- Mediante funciones
+
+create function f_products_by_company_per_year(@Year int)
+    returns table
+        as
+        return
+        select CompanyName, sum(Quantity) as Total
+        from Suppliers S
+                 join Products P on S.SupplierID = P.SupplierID
+                 join [Order Details] OD on P.ProductID = OD.ProductID
+                 join Orders O on OD.OrderID = O.OrderID
+        where year(OrderDate) = @Year
+        group by CompanyName;
+
+
+create function f_worst_supplier_per_year(@Year int)
+    returns nvarchar(40)
+as
+begin
+    declare @CompanyName nvarchar(40)
+    select @CompanyName = CompanyName
+    from dbo.f_products_by_company_per_year(@Year)
+    where total = (select min(Total) from dbo.f_products_by_company_per_year(@Year))
+    return @CompanyName
+end;
+go;
+
+print dbo.f_worst_supplier_per_year(1997)
+
+
+-- Mediante vistas
+
+create view v_product_by_company_by_year as
+select Year(OrderDate) as Year, CompanyName, sum(Quantity) as Total
+from Suppliers S
+         join Products P on S.SupplierID = P.SupplierID
+         join [Order Details] OD on P.ProductID = OD.ProductID
+         join Orders O on OD.OrderID = O.OrderID
+group by YEAR(OrderDate), CompanyName;
+
+select *
+from v_product_by_company_by_year
+
+
+create function f_worst_supplier_per_year(@Year int) returns nvarchar(40)
+as
+begin
+    declare @CompanyName nvarchar(40)
+
+    select @CompanyName = CompanyName
+    from v_product_by_company_by_year
+    where total = (select min(Total) from v_product_by_company_by_year where Year = @Year)
+      and Year = @Year
+
+    return @CompanyName
+end
 
 /*  Ejercicio 15:
     Crear una función o procedimiento almacenado que retorne la
@@ -446,10 +503,44 @@ end
 
 /*  Ejercicio 18:
     Crear una función o procedimiento almacenado que retorne el
-    nombre de la compañía con mayor cantidad de órdenes solicitadas
-    para un determinado país y un determinado año, los cuales son
+    nombre del cliente con la mayor cantidad de órdenes solicitadas
+    para un determinado país de destino y un determinado año, los cuales son
     ingresados como parámetros.
 */
+
+create function f_orders_per_company_per_year(@Country nvarchar(15), @year int)
+    returns table
+        as
+        return
+        select CompanyName, count(OrderId) as Total
+        from Customers C
+                 join Orders O on C.CustomerID = O.CustomerID
+        where ShipCountry = @Country
+          and year(OrderDate) = @year
+        group by CompanyName
+
+
+create function f_best_customer_per_country_per_year(@Country nvarchar(15), @Year int)
+    returns table
+        as
+        return
+        select CompanyName
+        from dbo.f_orders_per_company_per_year(@Country, @Year)
+        where Total = (select max(Total) from dbo.f_orders_per_company_per_year(@Country, @Year))
+
+select *
+from dbo.f_best_customer_per_country_per_year('France', 1997)
+
+
+create procedure sp_best_customer_per_country_per_year(@Country nvarchar(15), @Year int) as
+begin
+    select CompanyName
+    from dbo.f_orders_per_company_per_year(@Country, @Year)
+    where Total = (select max(Total) from dbo.f_orders_per_company_per_year(@Country, @Year))
+end;
+go;
+
+execute sp_best_customer_per_country_per_year 'USA', 1997
 
 /*  Ejercicio 19:
     Crear un procedimiento almacenado o función que retorne la cantidad de
